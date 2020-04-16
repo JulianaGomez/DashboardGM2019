@@ -1,0 +1,492 @@
+---
+title: "Análisis Académico de las Pruebas Saber para el Gimnasio Moderno"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    logo: EccolelogoVER.png
+
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(revealjs)
+library(knitr)
+library(RColorBrewer)
+library(ggplot2)
+library(plyr)
+library(reshape2)
+library(grid)
+library(Eccolepack)
+library(dplyr)
+library(wesanderson)
+library(tidyr)
+library(stringr)
+library(xtable)
+library(plotrix)
+library(gridExtra)
+library(scales)
+library(data.table)
+library(plotly)
+library(htmltools)
+library(htmlwidgets)
+library(stringr)
+library(egg)
+
+
+# cal a: Anglo Americano, Nuevo Colombo Americano, San Patricio, Unidad Pedagógica, Clara Casas, Instituto Alberto Merani
+# Juan Ramón Jiménez
+cala <- c(19810,79806,22004,83758,20149,66845,23895)
+
+# calb: - Anglo Colombiano, Nogales, Campestre, Femenino, Andino, Tilatá, Alcaparros, Campoalegre, Pachas
+calb <- c(19364,55988,25395,22574,19349,106286,95414,43562,19489)
+
+
+# grupos con moderno
+calamod <- c(19810,79806,22004,83758,20149,66845,23895,22848)
+calbmod <- c(19364,55988,25395,22574,19349,106286,95414,43562,19489,22848)
+
+
+# todos
+lista <- graflista <- c(22848,19810,79806,22004,83758,20149,66845,19364,55988,25395,22574,19349,106286,95414,43562,19489,23895)
+
+colegiointeres <- 22848
+
+nombreninio <- nomninio <- nomcoleinteres <- "Gimnasio Moderno"
+
+gmmm <- c(22848,19513)
+
+
+ locations <- c("~/Desktop/EccoleR/DataFrames/",
+                 "C://Users/julit/Desktop/EccoleR/DataFrames/",
+                 "C://Users/josem/Desktop/EccoleR/DataFrames/"
+  )
+  
+  setwd(Find(dir.exists, locations))
+  
+
+
+list.files(pattern=".RData")
+
+# create a list from these files
+list.filenames<-list.files(pattern=".RData")
+# list.filenames
+
+# create an empty list that will serve as a container to receive the incoming files
+list.data <- list()
+
+# create a loop to read in your data
+for (i in 1:length(list.filenames))
+{
+  list.data[[i]] <- load(list.filenames[i])
+}
+
+
+locations <- c("~/OneDrive/Éccole!/DATOS/ICFES/Saber 11 vs Saber Pro/",
+                 "C://Users/julit/OneDrive/Éccole!/DATOS/ICFES/Saber 11 vs Saber Pro/",
+                 "C://Users/josem/OneDrive/Éccole!/DATOS/ICFES/Saber 11 vs Saber Pro/"
+  )
+  
+  setwd(Find(dir.exists, locations))
+
+load("crucezscores.RData")
+
+
+locations <- c("~/OneDrive/Éccole! New and improved/Colegios/Trabajo/Moderno/Análisis cuantitativo 2019/Datos/",
+                 "C://Users/julit/OneDrive/Éccole! New and improved/Colegios/Trabajo/Moderno/Análisis cuantitativo 2019/Datos/",
+                 "C://Users/josem/OneDrive/Éccole! New and improved/Colegios/Trabajo/Moderno/Análisis cuantitativo 2019/Datos/"
+  )
+  
+  setwd(Find(dir.exists, locations))
+  
+  load("crucegm2019.RData")
+
+# load("~/OneDrive/Éccole! New and improved/Colegios/Trabajo/Moderno/Análisis cuantitativo 2019/Datos/crucegm2019.RData")
+
+
+Sys.setenv("plotly_username"="Julitwiga")
+Sys.setenv("plotly_api_key"="oBDpb5isfYwJYpdZIxdw")
+```
+
+Dashboard
+=======================================================================
+
+<!-- Column -->
+<!-- ----------------------------------------------------------------------- -->
+
+<!-- ### Lograría ingresar a los Andes -->
+
+<!-- ```{r pandes} -->
+<!-- pmoderno <- subset(pglobal, Codigocolegio==22848) -->
+<!-- pmoderno18 <- subset(pmoderno, Anio==2018) -->
+
+<!-- cuantos <- which(pmoderno18$Global>=250) -->
+<!-- # nrow(pmoderno18) -->
+
+<!-- Porceandes <- ifelse(length(cuantos) == nrow(pmoderno18), "100%","Otro") -->
+
+<!-- # Emit the download rate -->
+<!-- valueBox(value=Porceandes,  icon = "fa-graduation-cap", color = "#99CC00") -->
+
+<!-- ``` -->
+
+
+
+<!-- ### Puesto en Saber 11 calendario A -->
+<!-- ```{r Rankcala} -->
+<!-- valueBox(value=40,  icon = c("fa-chart-line", "fa-2x"), color = "#CCCC00") -->
+
+<!-- ``` -->
+
+
+
+<!-- ### Baja correlación en lectura crítica -->
+
+<!-- ```{r} -->
+<!-- gauge(0.18, min = 0, max = 1, gaugeSectors( -->
+<!--   success = c(0.7, 1), warning = c(0.2, 0.69), danger = c(0, 0.19) -->
+<!-- )) -->
+
+<!-- ``` -->
+
+
+Column
+-----------------------------------------------------------------------
+
+
+
+### **Distancia del puntaje del Gimnasio Moderno al top 10 de cada año, entre 2009-2019.** Ha reducido la distancia en todas las materias, acercándose cada vez más a los diez mejores colegios de Colombia en calendario A. En el 2019, la materia del GM con mejor desempeño en las pruebas Saber 11 es inglés. Las de mayor oportunidad de mejora son lectura crítica y ciencias naturales. Las correlaciones más bajas con las notas internas son en biología (con ciencias naturales) y en lectura crítica 2 (con lectura crítica), sugiriendo que se deben alinear mejor los contenidos internos con los de las pruebas Saber 11. {.no-padding}
+
+```{r top10inglc}
+#colegio interes
+codcolegiointeres <- colegiointeres
+
+makesubdfcomp<-function(df){
+  ddply(df[,!names(df)%in%c("Codigocolegio","Nombre","Calendario","Nomlabel")],
+        c("Año"),  summarise,
+        Promediosin= mean(Promediosin, na.rm=T),
+        Promediocon= mean(Promediocon, na.rm=T),
+        Matematicas= mean(Matematicas, na.rm=T),
+        Cienciasnaturales= mean(Cienciasnaturales, na.rm=T),
+        Lecturacritica= mean(Lecturacritica, na.rm=T),
+        Sociales= mean(Sociales, na.rm=T),
+        Ingles= mean(Ingles, na.rm=T),
+        Numeroestudiantes= mean(Numeroestudiantes, na.rm=T),
+        Ranking=mean(Ranking,na.rm=T),
+        RMate=mean(RMate,na.rm = T),
+        RCnat=mean(RCnat,na.rm = T),
+        RSoci=mean(RSoci,na.rm = T),
+        RIngl=mean(RIngl,na.rm = T),
+        RLcri=mean(RLcri,na.rm = T))
+}
+
+
+top10comp <- rankingscompletosA[rankingscompletosA$Ranking<=10&rankingscompletosA$Calendario=="A",]
+top10comp$Numeroestudiantes <- as.numeric(top10comp$Numeroestudiantes)
+top10comp <- top10comp[,c("Anio","Promediosin","Promediocon","Matematicas","Sociales","Ingles","Lecturacritica",
+                          "Cienciasnaturales", "Numeroestudiantes","Ranking","RMate","RCnat","RSoci","RIngl","RLcri")]
+
+names(top10comp)[1] <- "Año"
+top10comp$Promediosin <- as.numeric(top10comp$Promediosin)
+
+#
+test <- top10comp %>% group_by(Año) %>% summarise_all(funs(mean))
+test$Conjunto <- paste("10 mejores Cal","A")
+test <- test[test$Año>=2009,]
+
+#colegiointeres
+colegiointeresranks <- rankingseccole[rankingseccole$Codigocolegio==codcolegiointeres,]
+colegiointerescomp <- colegiointeresranks[,!names(colegiointeresranks)%in%c("Codigocolegio","Nombre","Calendario","Nomlabel")]
+colegiointerescomp$Conjunto <- nomcoleinteres
+colegiointerescomp$Departamento <- NULL
+
+
+comparativos <- rbind(colegiointerescomp,test)
+
+
+comparativos$Conjunto <- as.factor(comparativos$Conjunto)
+
+
+#personalizar color
+gg_color_hue <- function(n) {
+  hues = seq(1, 150, length=n+1)
+  hcl(h=hues, l=65, c=100)[1:n]
+}
+
+
+# Dynamically generate default color values, but have Paid="black".
+adj_names = sort(setdiff(unique(comparativos$Conjunto), c("10 mejores Cal A", "Gimnasio Moderno")))
+values = gg_color_hue(length(adj_names))
+names(values) = adj_names
+values = c(values, c("10 mejores Cal A"="#0059a9")) #azul
+values = c(values, c("Gimnasio Moderno"="#f38220")) #color colegio!
+
+
+comparativos$Conjunto <- as.factor(comparativos$Conjunto)
+comparativos$Año <- as.numeric(comparativos$Año)
+
+
+comparativos <- comparativos[,c("Año","Conjunto","RIngl","RLcri","RCnat")]
+meltcomp <- melt(comparativos,id.vars=c("Año","Conjunto"))
+
+
+
+
+meltcomp$variable <- revalue(meltcomp$variable,c("RCnat"="Ciencias naturales",
+                                                 "RIngl"="Inglés",
+                                                 "RLcri"="Lectura crítica"))
+
+
+print(ggplot(data = transform(meltcomp,
+                              variable=factor(variable,levels=c("Inglés","Lectura crítica","Ciencias naturales"))), aes(x=Año, y=value)) +
+        geom_line(aes(colour=Conjunto), size=2)+
+        scale_colour_manual(name= "", values=values)+
+        theme_bw()+
+        facet_wrap(~variable)+
+        ylab("Puesto promedio")+
+        scale_x_continuous(breaks=c(2009:2019),labels=c(9:19), name="Año")+
+        scale_y_reverse()+
+        theme(legend.position="top",
+              title=element_text(face = "bold"),
+              legend.text=element_text(size=8, face="plain"),
+              legend.title=element_text(size=8, face="bold"),
+              axis.title.y=element_blank(),
+              axis.text.x=element_text(size=8))+
+        theme(axis.title.x=element_text(size=8, face="bold"))+
+        theme(axis.text.y=element_blank())+
+        theme(strip.text.x = element_text(size = 8, face = "bold"))+
+        coord_polar())
+```
+
+
+
+### **Puntaje Global promoción 2018**: Cada punto representa el puntaje global en las pruebas Saber 11 de un estudiante que presentó la prueba en el 2018, en el Gimnasio Moderno y en colegios de referencia. Los colores representan las carreras a las cuales podrían ingresar, con su puntaje global, a la Universidad de los Andes. MADE: medicina, administración, derecho, economía. Morado: el resto. Amarillo: ninguna. Todos los estudiantes del Gimnasio Moderno de la promoción del 2018 podrían haber ingresado a la Universidad de los Andes con su puntaje global. 
+
+```{r pglobal,echo = TRUE, message = FALSE, echo = FALSE, warning=FALSE,fig.align = "center", cache=TRUE,fig.width=10}
+compuestoscoles <- subset(pglobal, Codigocolegio%in%lista)
+    puestos <- compuestoscoles[,c("Codigocolegio","Global","Anio","Type")]
+    mininom <- crucecodigos[,c("Codigocolegio","Nomlabel")]
+
+    puestos <- merge(puestos,mininom, by="Codigocolegio")
+    puestos$Global <- as.numeric(puestos$Global)
+
+
+    df <- puestos
+    df$Type <- ordered(df$Type, levels = c("cadetblue1", "seagreen3", "orange"))
+    df$Type <- revalue(df$Type,c("cadetblue1"="MADE", "seagreen3"="Otras", "orange"="Ninguna"))
+    # wrap nombres
+    # df$Nombreest <- str_wrap(df$Nombreest, width = 10)
+
+    anios <- c(2018)
+    df <- df[df$Anio%in%anios,]
+    names(df) <- c("Codigocolegio", "Global","Anio","Carrera","Colegio")
+
+
+    df$Colegio <- as.factor(df$Colegio)
+    
+    # ordenar Nomlabel para que Pachas quede primero
+    df$Colegio <- as.factor(df$Colegio)
+    df$Colegio <- ordered(df$Colegio,
+                            levels = c("Gimnasio Moderno","Instituto Alberto Merani","Nuevo Colombo Americano","Anglo Americano",
+                                           "Juan Ramón Jiménez","San Patricio","Clara Casas","Unidad Pedagógica",
+                                         "Gimnasio Femenino","Los Nogales","Santa Francisca Romana","Campoalegre",
+                                         "Tilatá","Los Alcaparros","Gimnasio Campestre","Anglo Colombiano", "Andino"))
+    
+    
+    plot_ly(data = df, x = ~Colegio, y = ~Global,color = ~Carrera,type="scatter", marker = list(size = 10,alpha=0.5))%>% layout(hovermode = 'closest')
+```
+
+
+<!-- Column -->
+<!-- ----------------------------------------------------------------------- -->
+
+
+
+### **Elección de carreras de egresados:** Egresados del Gimnasio Moderno, de universidades colombianas, entre 2011 y 2018 (es decir, entre 2005 y 2014 del colegio). La carrera más elegida por los egresados es administración en el CESA. 
+
+```{r carruniv}
+area <-  names(carrunivwide)[8:325]
+labelsarea <-   names(carrunivwide)[8:325]
+
+ temp <- carrunivwide[is.element(carrunivwide$Codigocolegio, colegiointeres),c("Codigocolegio", "Univlabel","Nombre","Nomlabel","Codigodane" ,area)]
+  
+  carruniv <- melt(temp,id.vars = ,c("Codigocolegio", "Univlabel","Nombre","Nomlabel","Codigodane"))
+  carruniv <- carruniv[complete.cases(carruniv),]
+  
+  names(carruniv) <- c("Codigocolegio", "Univlabel",     "Nombre",        "Nomlabel",      "Codigodane",    "Carrlabel","n")
+  
+  df <- carruniv
+  
+  colourCount = length(unique(df$Univlabel))
+  
+  
+  names(df) <- c("Codigocolegio", "Universidad",     "Nombre",        "Colegio",      "Codigodane",    "Carrera",     "n")
+  
+  df$Carrera <- ordered(df$Carrera,c( "Ingeniería química", "Comunicación audiovisual","Técnico en publicidad y mercadeo",
+                                      "Ingeniería biomédica", "Filosofía","Matemáticas","Ecología","Diseño de modas",
+                                      "Diseño de interiores","Ingeniería de sistemas","Publicidad y mercadeo","Diseño",
+                                      "Antropología","Administración agroprecuaria","Ingeniería civil","Ciencia política",
+                                      "Música","Ingeniería mecánica","Arte", "Historia","Relaciones internacionales",
+                                      "Psicología","Medicina",  "Publicidad", "Diseño industrial","Economía", "Comunicación social",                                       "Arquitectura","Ingeniería industrial","Derecho" ,"Administración"))
+  
+plotcu <- ggplot(df, aes(x = Carrera, y = n, fill = Universidad)) +
+    geom_bar(stat = "identity", width = .7) +
+    theme_bw()+
+    coord_flip()+
+    facet_grid(~Colegio, scales = "free_x")+
+    scale_y_continuous(breaks=seq(0,50,2))+
+    labs(y="Número de egresados 2011-2018",x="",fill="Universidad")+
+    scale_fill_manual(values = colorRampPalette(brewer.pal(12, "Paired"))(colourCount)) +
+    theme(plot.title = element_text(lineheight=1, face="bold"),
+          legend.position="bottom", legend.title=element_text(face='bold'),
+          axis.title.x =element_text(vjust=0.5, size=8, face = "bold"),
+          axis.text.x  = element_text(vjust=0.5, size=8, face = "bold"),
+          axis.ticks.x = element_blank())+
+    theme(title=element_text(face = "bold"),
+          legend.text=element_text(size=8),
+          legend.title=element_text(size=8),
+          axis.title.y=element_text(size=8, face="bold" ),
+          axis.text.x=element_text(vjust=0.7,face="bold", size=8))+
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 8, b = 0, l = 0)))+
+    theme(axis.text.y=element_text(size=8, face="bold"))
+
+ggplotly(plotcu)
+```
+
+
+
+Column
+-----------------------------------------------------------------------
+
+### **Ranking promedio calendario A 2009-2019:** En el 2019, el Gimnasio Moderno logró su mejor desempeño de la década en casi todas las materias (exceptuando sociales). Relativo a los colegios de referencia de calendario A, superó al Colegio Unidad Pedagógica, al Colegio Clara Casas y al Liceo Juan Ramón Jiménez en todas las materias, menos lectura crítica, donde solo supera al Colegio Unidad Pedagógica y al Colegio Clara Casas. 
+
+```{r rankcala}
+comprankings <- rankingseccole[rankingseccole$Codigocolegio%in%calamod,c("Ranking","Año","Nomlabel","Calendario")]
+
+meltcomprankings <- melt(comprankings, id = c("Año","Nomlabel","Calendario"))
+colnames(meltcomprankings) [1] <- "Año"
+colnames(meltcomprankings) [4] <- "Promedio"
+colnames(meltcomprankings) [5] <- "Puesto"
+
+#personalizar color del colegio
+gg_color_hue <- function(n) {
+  hues = seq(1, 150, length=n+1)
+  hcl(h=hues, l=65, c=100)[1:n]
+}
+
+# Dynamically generate default color values, but have Paid="black".
+adj_names = sort(setdiff(unique(meltcomprankings$Nomlabel),
+c("Anglo Americano","Clara Casas", "Gimnasio Moderno", "Instituto Alberto Merani","Nuevo Colombo Americano","San Patricio",    "Unidad Pedagógica","Juan Ramón Jiménez")))
+
+values = gg_color_hue(length(adj_names))
+names(values) = adj_names
+values = c(values, c("Anglo Americano"="#ccffe6")) #verde pastel
+values = c(values, c("Gimnasio Moderno"="#000000")) #negro
+values = c(values, c("Clara Casas"="#9a72ff")) #morado
+values = c(values, c("Instituto Alberto Merani"="#ffdb5e")) #amarillo
+values = c(values, c("Nuevo Colombo Americano"="#92e4ff")) #azul cielo
+values = c(values, c("San Patricio"="#8d0064")) #morado
+values = c(values, c("Unidad Pedagógica"="#ffa481")) #beige
+values = c(values, c("Juan Ramón Jiménez"="#82c928")) #verde claro
+
+
+
+
+# ordenar Nomlabel para que Pachas quede primero
+meltcomprankings$Nomlabel <- as.factor(meltcomprankings$Nomlabel)
+meltcomprankings$Nomlabel <- ordered(meltcomprankings$Nomlabel,
+                            levels = c(c("Gimnasio Moderno","Anglo Americano",
+                                         "Nuevo Colombo Americano","Instituto Alberto Merani","Juan Ramón Jiménez","Unidad Pedagógica","San Patricio","Clara Casas")))
+
+
+meltcomprankings$Calendario <- as.factor(meltcomprankings$Calendario)
+
+names(meltcomprankings) <- c("Año","Colegio","Calendario","Promedio","Puesto")
+
+
+meltcomprankings$Promedio <- gsub("Ranking","Puesto promedio",meltcomprankings$Promedio)
+
+#ggplot
+promcala <- ggplot(meltcomprankings, aes(x=Año, y=Puesto,colour=Colegio))+
+  geom_line(size=1,alpha=0.8)+
+  scale_x_continuous(breaks=2009:2019, labels = 9:19,name="Año")+
+  scale_y_reverse(breaks=c(1,30,60,90,120,150,180,210,240,270,300,330,360,390,420,450,480,510,540,570,600,630,660,690,720,750,780,810))+
+  facet_wrap(~Promedio)+
+  geom_point(shape = 19,         # Hollow squares
+               size = 3)+           # Large points
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5,size=8))+
+  # ggtitle("Desempeño en Saber 11 del San Tarsicio vs. colegios masculinos de referencia")+
+  labs(y="Puesto promedio simple (con inglés)")+
+  scale_colour_manual(name= "Colegio", values=values)+
+  theme(legend.position="right",
+        title=element_text(face = "bold"),
+        legend.text=element_text(size=8, face="plain"),
+        legend.title=element_text(size=8, face="bold"),
+        axis.title.y=element_text(size=8, face="bold" ),
+        axis.text.x=element_text(face="bold", size=8))+
+  theme(axis.title.x=element_text(size=8, face="bold"))+
+  theme(axis.text.y=element_text(size=8, face="bold"))+
+  theme(strip.text.x = element_text(size = 8, face = "bold"))+
+  theme(axis.title.y = element_blank())+
+  guides(colour = guide_legend(reverse=TRUE,nrow = 15,override.aes = list(shape = 15, size = 8)))
+
+ggplotly(promcala)
+```
+
+
+### **Ranking estimado calendario B 2019:** Aunque calendario A y B presentan pruebas Saber 11 diferentes, se comparó el promedio en las pruebas Saber 11 del Gimnasio Moderno con el de los 395 colegios de calendario B que presentaron la prueba en el 2019, para estimar en qué puesto habría quedado si fuera calendario B. Habría quedado en el puesto 60, es decir, con un desempeño mejor que el 84\% de los colegios de calendario B. Entre los colegios de referencia, supera al Gimnasio Femenino y al Colegio Tilatá en el promedio de las cinco materias del núcleo común, así como en matemáticas y en ciencias. Al Colegio Anglo Colombiano lo supera en lectura crítica y ciencias, y al Gimnasio Campestre y al Colegio Andino en inglés (acá también supera al Gimnasio Femenino).
+
+```{r rankcalb}
+calb2019 <- rankingscompletosB[rankingscompletosB$Anio==2019,]
+gm <- rankingscompletosA[rankingscompletosA$Codigocolegio==22848,]
+gm2019 <- gm[gm$Anio==2019,]
+gm2019 <- gm2019[complete.cases(gm2019),]
+
+
+# names(gm2019)
+calb2019$Codigodane <- NULL
+
+calb2019 <- rbind(calb2019,gm2019)
+mini <- calb2019[,c("Codigocolegio","Nombre","Promediocon")]
+mini <- mini[complete.cases(mini),]
+mini$Ranking <- rank(-mini$Promediocon, na.last = TRUE,
+                     ties.method = "last")
+
+miniref <- mini[mini$Codigocolegio%in%lista,]
+mininom <- crucecodigos[,c("Codigocolegio","Nomlabel")]
+
+miniref <- merge(miniref,mininom,by="Codigocolegio")
+
+miniref$Grupo <- ifelse(miniref$Codigocolegio==22848,1,2)
+miniref$Grupo <- as.factor(miniref$Grupo)
+
+grafrank <- ggplot(miniref, aes(reorder(Nomlabel,Ranking),  Ranking,fill=Grupo)) +
+      geom_bar(stat = "identity") +
+      ylab("Puesto 2019 entre calendario B")+
+      xlab("Colegio")+
+      theme_bw()+
+      scale_y_reverse()+
+      scale_fill_manual(values=wes_palette(n=5, name="Darjeeling1"))+
+      theme(legend.position="none",
+            title=element_text(face = "bold"),
+            legend.text=element_text(size=8, face="plain"),
+            legend.title=element_text(size=8, face="bold"),
+            axis.title.y=element_text(size=8, face="bold" ),
+            axis.text.x=element_text(angle=90,vjust=0.7,face="bold", size=8))+
+      theme(axis.title.x=element_text(size=8, face="bold"))+
+      theme(axis.text.y=element_text(size=8, face="bold"))+
+      theme(strip.text.x = element_text(size = 8))
+
+
+   ggplotly(grafrank)
+```
+
+
+
+
+Presentación completa
+=======================================================================
+
+La presentación completa del análisis, incluyendo la metodología y todas las gráficas, se encuentra en [esta página](https://julianagomez.github.io/GM2019/). La presentación incluye gráficas dinámicas. 
+
+
